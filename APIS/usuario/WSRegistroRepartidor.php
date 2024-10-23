@@ -1,42 +1,56 @@
 <?php
-    require "../conexion/Conexion.php";
-    require "../conexion/Config.php";
+include '../conexion/conexion.php';
 
-    $dbConn = conexion($db);
+$conexion->set_charset('utf8');
 
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $primer_apellido = $_POST['primer_apellido'] ?? null;
+    $segundo_apellido = $_POST['segundo_apellido'] ?? null;
+    $nombre = $_POST['nombre'] ?? null;
+    $numero_id = $_POST['numero_id'] ?? null;
+    $celular = $_POST['celular'] ?? null;
+    $sexo = $_POST['sexo'] ?? null;
+    $correo = $_POST['correo'] ?? null;
+    $nombre_vehiculo = $_POST['nombre_vehiculo'] ?? null;
+    $placa_vehiculo = $_POST['placa_vehiculo'] ?? null;
+    $id_us = $_POST['id_us'] ?? null;
+    $contrasena = $_POST['contrasena'] ?? null;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+    if ($primer_apellido && $segundo_apellido && $nombre && $numero_id && $celular && $sexo && $correo && $nombre_vehiculo && $placa_vehiculo && $id_us && $contrasena) {
+        $sql = "CALL spRepartidorRegistrar(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-      $sql = $dbConn->prepare("CALL spRepartidorRegistrar(?,?,?,?,?,?,?,?,?,?,?)");
-      $sql->bindValue('1', $_GET['primer_pellido']);
-      $sql->bindValue('2', $_GET['segundo_apellido']);
-      $sql->bindValue('3', $_GET['nombre']);
-      $sql->bindValue('4', $_GET['numero_id']);
-      $sql->bindValue('5', $_GET['celular']);
-      $sql->bindValue('6', $_GET['sexo']);
-      $sql->bindValue('7', $_GET['correo']);
-      $sql->bindValue('8', $_GET['nombre_vehiculo']);// tipo de verhiculo
-      $sql->bindValue('9', $_GET['placa_vehiculo']);
-      $sql->bindValue('10', $_GET['id_us']); //id usuario
-      $sql->bindValue('11', $_GET['contrasena']);
+        if ($consulta = $conexion->prepare($sql)) {
+            $consulta->bind_param('sssssssssss', 
+                $primer_apellido, 
+                $segundo_apellido, 
+                $nombre, 
+                $numero_id, 
+                $celular, 
+                $sexo, 
+                $correo, 
+                $nombre_vehiculo, 
+                $placa_vehiculo, 
+                $id_us, 
+                $contrasena
+            );
+            $consulta->execute();
 
-      $sql->execute();
+            if ($consulta->affected_rows > 0) {
+                echo json_encode(["estatus" => 200, "data" => "Registro exitoso"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["estatus" => 204, "data" => "No se pudo registrar"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            }
 
-      if($sql === false){
-        $arreglo['estatus'] = 204;
-    }else{
-        $arreglo['estatus'] = 200;
+            $consulta->close();
+        } else {
+            echo json_encode(["success" => false, "error" => $conexion->error], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        }
+    } else {
+        echo json_encode(["success" => false, "error" => "Faltan datos necesarios"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
-
-      header('Content-Type: application/json');
-      header("HTTP/1.1 200 OK");
-
-      $arreglo['data']= $sql->fetchAll();
-      echo json_encode($arreglo);   
-
-    exit();
+} else {
+    echo json_encode(["success" => false, "error" => "Método no permitido"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 }
 
-header("HTTP/1.1 400 Bad Request");
-
+$conexion->close();
 ?>

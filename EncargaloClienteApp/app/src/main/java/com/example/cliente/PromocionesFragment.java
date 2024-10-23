@@ -80,77 +80,90 @@ public class PromocionesFragment extends Fragment {
 
     }
 
-    private void  loadPromos() {
+    private void loadPromos() {
         progressDialog.show();
         promoArrayList.clear();
 
-        Log.d(TAG,"loadads URL: "+url);
+        Log.d(TAG, "loadads URL: " + url);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-
                 progressDialog.dismiss();
-                Log.d(TAG, "onReposnse " + response);
+                Log.d(TAG, "onResponse: " + response);
 
                 try {
+                    // Parseamos el JSON en el formato JSend
+                    JSONObject jsonResponse = new JSONObject(response);
+                    String status = jsonResponse.getString("status");
 
+                    if (status.equals("success")) {
+                        // Si el status es success, procesamos los datos
+                        JSONArray jsonArray = jsonResponse.getJSONArray("data");
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            try {
+                                JSONObject jsonObject1 = jsonArray.getJSONObject(i);
+                                String id = jsonObject1.getString("id");
+                                String titulo = jsonObject1.getString("Titulo");
+                                String estado = jsonObject1.getString("Estado");
+                                String idtienda = jsonObject1.getString("idTienda");
+                                String url = jsonObject1.getString("imagen");
+                                String fechainicio = jsonObject1.getString("fecha");
+                                String fechafinal = jsonObject1.getString("fechafin");
+                                String idcategoria = jsonObject1.getString("idCategoria");
+                                String idproducto = jsonObject1.getString("idProducto");
 
-                    JSONArray jsonArray = new JSONArray(response);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        try {
-                            JSONObject jsonObject1 = jsonArray.getJSONObject(i);
-                            String id = jsonObject1.getString("id");
-                            String titulo= jsonObject1.getString("Titulo");
-                            String estado = jsonObject1.getString("Estado");
-                            String idtienda = jsonObject1.getString("idTienda");
-                            String url = jsonObject1.getString("imagen");
-                            String fechainicio = jsonObject1.getString("fecha");
-                            String fechafinal = jsonObject1.getString("fechafin");
-                            String idcategoria = jsonObject1.getString("idCategoria");
-                            String idproducto = jsonObject1.getString("idProducto");
+                                idtiendas = idtienda;
+                                Log.d(TAG, "onResponse99 " + idtiendas);
 
-                            idtiendas=idtienda;
-                            Log.d(TAG, "onReposnse99 " + idtiendas);
+                                ModelPromos modelPromo = new ModelPromos(
+                                        "" + id,
+                                        "" + titulo,
+                                        "" + fechainicio,
+                                        "" + fechafinal,
+                                        "" + url,
+                                        "" + estado,
+                                        "" + idtienda,
+                                        "" + idcategoria,
+                                        "" + idproducto
+                                );
+                                promoArrayList.add(modelPromo);
 
-                            ModelPromos modelPromo = new ModelPromos( ""+id,
-                                    "" + titulo, "" + fechainicio,
-                                    "" + fechafinal,
-                                    "" + url,
-                                    "" + estado,
-                                    "" + idtienda,
-                                    "" + idcategoria,
-                                    ""+idproducto
-                            );
-                            promoArrayList.add(modelPromo);
-
-
-                        } catch (Exception e) {
-                            Log.d(TAG, "Reponse 1:" + e.getMessage());
-                            Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
-
+                            } catch (Exception e) {
+                                Log.d(TAG, "Response 1 error: " + e.getMessage());
+                                Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
                         }
 
+                        // Actualizamos el adaptador
+                        adaptadorPromos = new AdaptadorPromos(getContext(), promoArrayList);
+                        adsRv.setAdapter(adaptadorPromos);
 
+                    } else if (status.equals("fail")) {
+                        // En caso de fallo (ej. validación incorrecta)
+                        JSONObject failData = jsonResponse.getJSONObject("data");
+                        String failMessage = failData.getString("message");
+                        Log.d(TAG, "Fail: " + failMessage);
+                        Toast.makeText(getContext(), failMessage, Toast.LENGTH_SHORT).show();
 
-
+                    } else if (status.equals("error")) {
+                        // En caso de error del servidor
+                        String errorMessage = jsonResponse.getString("message");
+                        Log.d(TAG, "Error: " + errorMessage);
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
                     }
-
-                    adaptadorPromos = new AdaptadorPromos(getContext(), promoArrayList);
-
-                    adsRv.setAdapter(adaptadorPromos);
 
                     progressDialog.dismiss();
 
                 } catch (Exception e) {
-                    Log.d(TAG, "Reponse 2:" + e.getMessage());
+                    Log.d(TAG, "Response 2 error: " + e.getMessage());
                     Toast.makeText(getContext(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.d(TAG,"OnErrorResponse: "+error.getMessage());
+                Log.d(TAG, "OnErrorResponse: " + error.getMessage());
                 Toast.makeText(getContext(), "" + error.getMessage(), Toast.LENGTH_SHORT).show();
                 progressDialog.dismiss();
             }
@@ -159,5 +172,6 @@ public class PromocionesFragment extends Fragment {
         RequestQueue requestQueue = Volley.newRequestQueue(getContext());
         requestQueue.add(stringRequest);
     }
+
 
 }

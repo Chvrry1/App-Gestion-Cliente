@@ -1,5 +1,5 @@
 <?php
-    require "../conexion/Conexion.php";
+    require "../conexion/Conexionn.php";
     require "../conexion/Config.php";
 
     $dbConn = conexion($db);
@@ -7,8 +7,8 @@
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $sql = $dbConn->prepare("CALL spEncargoEnCamino(:IdRepartidor,:IdPedido)");
-        $sql->bindValue(':IdRepartidor', $_GET['IdRepartidor']);
-        $sql->bindValue(':IdPedido', $_GET['IdPedido']);
+        $sql->bindValue(':IdRepartidor', $_POST['IdRepartidor']);
+        $sql->bindValue(':IdPedido', $_POST['IdPedido']);
         $sql->execute();
 
 

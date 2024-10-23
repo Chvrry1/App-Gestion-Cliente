@@ -1,24 +1,24 @@
-<?PHP
-$hostname_localhost="localhost";
-$database_localhost="dbencargalo";
-$username_localhost="root";
-$password_localhost="1234";
+<?php
 
-$json = array();
+include 'conexion.php';
 
-        $conexion = mysqli_connect($hostname_localhost,$username_localhost,$password_localhost,$database_localhost);
-        
-        $consulta = "select * from tblrubro";
-        $resultado = mysqli_query($conexion,$consulta);
+$conexion->set_charset("utf8");
 
-        while($registro=mysqli_fetch_array($resultado)){
-        
-            $result["IdRubro"]=$registro['IdRubro'];
-            $result["nombreRubro"]=$registro['nombreRubro'];
-            $json['rubros'][]=$result;
+$consulta = "CALL realizarPedidos()"; 
+$resultado = $conexion->query($consulta);
+$numero_filas = mysqli_num_rows($resultado);
 
-        }
-        mysqli_close($conexion);
-        echo json_encode($json);
-        
+if ($numero_filas < 1) {
+    echo "Sin resultados";
+    return false;
+}
+
+while ($fila = $resultado->fetch_assoc()) {
+    $json['rubros'][] = $fila; 
+}
+
+echo json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE); 
+
+$resultado->close();
+
 ?>

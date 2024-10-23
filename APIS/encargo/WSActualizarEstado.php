@@ -1,10 +1,10 @@
 <?php
-    require "../conexion/Conexion.php";
+    require "../conexion/Conexionn.php";
     require "../conexion/Config.php";
 
     $dbConn = conexion($db);
     
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $input = $_GET;
         $postId = $input['id'];
         $estado = $input['estado'];

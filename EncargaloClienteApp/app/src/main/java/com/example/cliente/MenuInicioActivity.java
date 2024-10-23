@@ -20,6 +20,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.cliente.adapter.FragmentosFun;
 import com.example.cliente.adapter.IPConfig;
@@ -80,8 +81,6 @@ public class MenuInicioActivity extends AppCompatActivity implements Response.Er
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         Fragment_perfil_menu fragment_perfil_menu = new Fragment_perfil_menu();
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_comprar, R.id.nav_mis_pedidos,R.id.nav_notificaciones,R.id.nav_menupublicidad,R.id.nav_ajustes,R.id.nav_calificacion,R.id.nav_mi_perfil)
                 .setDrawerLayout(drawer)
@@ -105,8 +104,6 @@ public class MenuInicioActivity extends AppCompatActivity implements Response.Er
         adcontainer = findViewById(R.id.adcontainer);
         btncerrarad = findViewById(R.id.btn_cerrarad);
 
-
-
         btncerrarad.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -114,61 +111,43 @@ public class MenuInicioActivity extends AppCompatActivity implements Response.Er
             }
         });
 
+        requestQueue = Volley.newRequestQueue(this);
 
+        buscarAnuncio( IPConfig.ipServidor +"patrocinador/consultaranuncio.php?idusuario="+idusuario);
 
+        final Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            int i=0;
+            public void run() {
 
+                if(anuncios.size()>0 && urls.size()>0){
+                    String uri = anuncios.get(i);
+                    String url = urls.get(i);
 
-            buscarAnuncio( IPConfig.ipServidor +"patrocinador/consultaranuncio.php?idusuario="+idusuario);
-
-
-
-            final Handler handler = new Handler();
-            Runnable runnable = new Runnable() {
-                int i=0;
-                public void run() {
-
-                    if(anuncios.size()>0 && urls.size()>0){
-                        String uri = anuncios.get(i);
-                        String url = urls.get(i);
-
-                        adimage.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                Intent viewIntent4 =
-                                        new Intent("android.intent.action.VIEW",
-                                                Uri.parse(url));
-                                startActivity(viewIntent4);
-                            }
-                        });
-                        Picasso.get().load(uri).into(adimage);
-                        Picasso.get().setLoggingEnabled(true);
-                       // Toast.makeText(getApplicationContext(), "" + i, Toast.LENGTH_SHORT).show();
-                        i++;
-                        if(i>anuncios.size()-1) {
-                            i=0;
+                    adimage.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent viewIntent4 =
+                                    new Intent("android.intent.action.VIEW",
+                                            Uri.parse(url));
+                            startActivity(viewIntent4);
                         }
-                        handler.postDelayed(this, 4000);  //for interval...
+                    });
+                    Picasso.get().load(uri).into(adimage);
+                    Picasso.get().setLoggingEnabled(true);
+                   // Toast.makeText(getApplicationContext(), "" + i, Toast.LENGTH_SHORT).show();
+                    i++;
+                    if(i>anuncios.size()-1) {
+                        i=0;
                     }
+                    handler.postDelayed(this, 4000);  //for interval...
                 }
-            };
-            handler.postDelayed(runnable, 4000);
-
-
-
-
-
-
+            }
+        };
+        handler.postDelayed(runnable, 4000);
     }
 
-
-
-
-
         //updateNavHeader();
-
-
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -211,38 +190,54 @@ public class MenuInicioActivity extends AppCompatActivity implements Response.Er
         }
     }
 
-    public void buscarAnuncio(String URL){
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(URL, new Response.Listener<JSONArray>() {
+    public void buscarAnuncio(String URL) {
+        // Cambia la lógica para utilizar StringRequest y asegurarte de manejar ambas respuestas
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, URL, new Response.Listener<String>() {
             @Override
-            public void onResponse(JSONArray response) {
-                JSONObject jsonObject = null;
-                Log.d("HOLA",response+"");
-                for (int i = 0; i < response.length(); i++) {
-                    try {
-                        jsonObject = response.getJSONObject(i);
+            public void onResponse(String response) {
+                try {
+                    JSONArray anunciosArray = new JSONArray(response);
+                    for (int i = 0; i < anunciosArray.length(); i++) {
+                        JSONObject jsonObject = anunciosArray.getJSONObject(i);
                         anuncios.add(jsonObject.getString("imagen"));
                         urls.add(jsonObject.getString("url"));
-
-                    } catch (JSONException ex) {
-                        Toast.makeText(getApplicationContext(), "" + ex.getMessage(), Toast.LENGTH_SHORT).show();
                     }
-
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.has("error")) {
+                            Toast.makeText(getApplicationContext(), jsonObject.getString("error"), Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "No se encontraron anuncios.", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException ex) {
+                        ex.printStackTrace();
+                        Toast.makeText(getApplicationContext(), "Error al procesar la respuesta", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(getApplicationContext(),"Error de conexion"+error,Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
                 error.printStackTrace();
             }
         });
-        requestQueue=Volley.newRequestQueue(this);
-        requestQueue.add(jsonArrayRequest);
+
+        // Aquí es importante asegurarse de que la requestQueue esté inicializada
+        if (requestQueue != null) {
+            requestQueue.add(stringRequest);
+        } else {
+            Toast.makeText(getApplicationContext(), "Error: RequestQueue no está inicializada", Toast.LENGTH_SHORT).show();
+        }
     }
+
+
+
 
     @Override
     protected void onResume() {
-        buscarAnuncio( IPConfig.ipServidor +"patrocinador/consultaranuncio.php?idusuario="+idusuario);
         adcontainer.setVisibility(View.VISIBLE);
         super.onResume();
     }

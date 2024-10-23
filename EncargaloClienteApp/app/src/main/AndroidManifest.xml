@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.cliente">
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
@@ -23,9 +24,7 @@
         <activity android:name=".ConfirmarPedidoActivity" />
         <activity android:name=".MiPedidoActivity" />
         <activity android:name=".DetalleProductoActivity" />
-        <activity android:name=".Model.ItemListCategoria" />
         <activity android:name=".MostrarProductosTienda" />
-        <activity android:name=".Model.ItemListEsta" />
         <activity android:name=".EsctablecimientosActivity" />
 
         <meta-data

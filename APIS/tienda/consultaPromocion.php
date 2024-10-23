@@ -1,20 +1,46 @@
 <?php
 
 include 'conexion.php';
-#$fechafinal=$_GET['fechafinal'];
 
+header('Content-Type: application/json; charset=utf-8');
 
-$consulta= "select * from tblpromociones where fechafin>NOW() and fecha<NOW()  order by Id DESC";
+$conexion->set_charset('utf8');
+
+$consulta = "SELECT * FROM tblpromociones WHERE fechafin > NOW() AND fecha < NOW() ORDER BY Id DESC";
+
 $resultado = $conexion->query($consulta);
-$numero_filas = mysqli_num_rows($resultado);
-if($numero_filas<1){
-	echo "Sin resultados";
-	return false;
-}
-while($fila=$resultado->fetch_array()){
-	$anuncio[]=array_map('utf8_encode',$fila);
+
+if (!$resultado) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Error en la consulta a la base de datos',
+        'data' => $conexion->error
+    ]);
+    exit();
 }
 
-echo json_encode($anuncio);
+$numero_filas = mysqli_num_rows($resultado);
+
+if ($numero_filas < 1) {
+    echo json_encode([
+        'status' => 'fail',
+        'data' => [
+            'message' => 'No se encontraron promociones activas.'
+        ]
+    ]);
+    exit();
+}
+
+$anuncio = [];
+while ($fila = $resultado->fetch_array(MYSQLI_ASSOC)) {
+    $anuncio[] = array_map('utf8_encode', $fila);
+}
+
+echo json_encode([
+    'status' => 'success',
+    'data' => $anuncio
+]);
+
 $resultado->close();
+$conexion->close();
 ?>

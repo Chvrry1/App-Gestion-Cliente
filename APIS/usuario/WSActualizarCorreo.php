@@ -1,30 +1,35 @@
 <?php
-    require "../conexion/Conexion.php";
-    require "../conexion/Config.php";
+include '../conexion/conexion.php';
 
-    $dbConn = conexion($db);
-    
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        
-        $sql = $dbConn->prepare("CALL spUsuarioActualizarCorreo(:IdPersona,:correo)");
-        $sql->bindValue(':IdPersona', $_GET['IdPersona']);
-        $sql->bindValue(':correo', $_GET['correo']);
-        $sql->execute();
+$conexion->set_charset('utf8');
 
-        if ($sql) {
-            $arreglo['data'] = 'Actualizado';
-            $arreglo['estatus'] = 200;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $idPersona = $_POST['IdPersona'] ?? null;
+    $correo = $_POST['correo'] ?? null;
+
+    if ($idPersona && $correo) {
+        $sql = "CALL spUsuarioActualizarCorreo(?, ?)";
+
+        if ($consulta = $conexion->prepare($sql)) {
+            $consulta->bind_param('ss', $idPersona, $correo);
+            $consulta->execute();
+
+            if ($consulta->affected_rows > 0) {
+                echo json_encode(["data" => "Actualizado", "estatus" => 200], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["data" => "No actualizado", "estatus" => 204], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            }
+
+            $consulta->close();
         } else {
-            $arreglo['data'] = 'No actualizado';
-            $arreglo['estatus'] = 204;
+            echo json_encode(["success" => false, "error" => $conexion->error], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
-
-        echo json_encode($arreglo);
-
-        header('Content-Type: application/json');
-        header("HTTP/1.1 200 OK");
-        exit();
+    } else {
+        echo json_encode(["success" => false, "error" => "Faltan datos necesarios"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
+} else {
+    echo json_encode(["success" => false, "error" => "Método no permitido"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+}
 
-    header("HTTP/1.1 400 Bad Request");
+$conexion->close();
 ?>

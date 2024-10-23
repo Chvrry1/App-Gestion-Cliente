@@ -1,3 +1,38 @@
+----PROCEDIMIENTOS----
+----------------------
+DELIMITER $$
+----------------------
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `spEncargoEnCamino` (IN `IdRepartidor` INT, IN `IdOrden` INT)  
+BEGIN
+    DECLARE errno INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        GET CURRENT DIAGNOSTICS CONDITION 1 errno = MYSQL_ERRNO;
+        SELECT errno AS MYSQL_ERROR;
+        ROLLBACK;
+    END;
+    
+    START TRANSACTION;
+    
+    SET @estadoRepartidor = 'OCUPADO'; 
+    SET @estadoOrden = 4;
+
+    # Actualización del estado del repartidor
+    UPDATE tblrepartidor SET repEstado = @estadoRepartidor
+    WHERE idRepartidor = IdRepartidor;
+
+    # Actualización del estado de la orden
+    UPDATE tblorden SET tblorden.odEstado = @estadoOrden
+    WHERE tblorden.idOrden = IdOrden;
+    
+    COMMIT WORK;
+END$$
+
+----------------------------------
+DELIMITER ;
+----------------------------------
+
 create table tblRoles(
 idRoles int auto_increment primary key,
 Roles varchar(30),

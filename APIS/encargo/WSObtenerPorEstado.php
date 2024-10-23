@@ -1,5 +1,5 @@
 <?php
-require "../conexion/Conexion.php";
+require "../conexion/Conexionn.php";
 require "../conexion/Config.php";
 
 $dbConn = conexion($db);

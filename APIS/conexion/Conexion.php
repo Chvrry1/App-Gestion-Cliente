@@ -1,34 +1,12 @@
 <?php
+$hostname='localhost';
+$username ='root';
+$password='';
+$database ='dbencargalo';
 
-function conexion($db)
-{
+$conexion = mysqli_connect($hostname,$username,$password,$database);
 
-    try {
-        $con = new PDO("mysql:host={$db['host']};dbname={$db['db']};charset=utf8", $db['username'], $db['password']);
-        $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        return $con;
-
-    } catch (PDOException $exception) {
-        exit($exception->getMessage());
-    }
+if( mysqli_connect_errno() ){
+    echo "Conexion fallida: " . mysqli_connect_error();
 }
-
-//Obtener parametros para updates
-function getParams($input)
-{
-    $filterParams = [];
-    foreach ($input as $param => $value) {
-        $filterParams[] = "$param=:$param";
-    }
-    return implode(", ", $filterParams);
-}
-
-//Asociar todos los parametros a un sql
-function bindAllValues($statement, $params)
-{
-    foreach ($params as $param => $value) {
-        $statement->bindValue(':' . $param, $value);
-    }
-    return $statement;
-}
+?>

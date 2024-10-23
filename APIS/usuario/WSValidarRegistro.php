@@ -1,81 +1,47 @@
 <?php
-    require "../conexion/Conexion.php";
-    require "../conexion/Config.php";
+include '../conexion/conexion.php';
 
-    $dbConn = conexion($db);
+$conexion->set_charset('utf8');
 
-    if ($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    $identificacion = $_GET['identificacion'] ?? null;
+    $email = $_GET['email'] ?? null;
+    $celular = $_GET['celular'] ?? null;
+    $usuario = $_GET['usuario'] ?? null;
 
-        if (isset($_GET['identificacion']) && isset($_GET['email']) && isset($_GET['celular']) && isset($_GET['usuario']))
-        {
-            if(!empty($_GET['identificacion']) || !empty($_GET['email']) || !empty($_GET['celular']) || !empty($_GET['usuario'])){
-                $sql = $dbConn->prepare("CALL spUsuarioValidarRegistro(:identificacion, :email, :celular, :usuario, @EXISTS_ID, @EXISTS_MAIL, @EXISTS_CELULAR, @EXISTS_USUARIO)");
-                $sql->bindValue(':identificacion', $_GET['identificacion']);
-                $sql->bindValue(':email', $_GET['email']);
-                $sql->bindValue(':celular', $_GET['celular']);
-                $sql->bindValue(':usuario', $_GET['usuario']);
-                $sql->execute();
-                $sql->closeCursor();
-                
-                //construir query para obtener valores de retorno.
-                $query = "SELECT";
-                if(!empty($_GET['identificacion'])){
-                    $query = $query . "@EXISTS_ID AS id,";
-                }
-                if(!empty($_GET['email'])){
-                    $query = $query . "@EXISTS_MAIL AS correo,";
-                }
-                if(!empty($_GET['celular'])){
-                    $query = $query . "@EXISTS_CELULAR AS celular,";
-                }
-                if(!empty($_GET['usuario'])){
-                    $query = $query . "@EXISTS_USUARIO AS usuario,";
-                }
+    if ($identificacion && $email && $celular && $usuario) {
+        $sql = "CALL spUsuarioValidarRegistro(?, ?, ?, ?)";
 
-                //remover ultima coma
-                $query = rtrim($query,',');
-    
-                $row = $dbConn->query($query)->fetch(PDO::FETCH_ASSOC);
-    
-                $items =  [];
-                /**
-                 * convertir de String a Int si existe el parametro-
-                 */
-                if(array_key_exists('id', $row)){
-                    $items['id'] = intval($row['id'] );
-                }
+        if ($consulta = $conexion->prepare($sql)) {
+            $consulta->bind_param('ssss', $identificacion, $email, $celular, $usuario);
+            $consulta->execute();
+            $resultado = $consulta->get_result();
 
-                if(array_key_exists('correo', $row)){
-                    $items['correo'] = intval($row['correo'] );
-                }
+            if ($resultado) {
+                $row = $resultado->fetch_assoc();
 
-                if(array_key_exists('celular', $row)){
-                    $items['celular'] = intval($row['celular'] );
-                }
+                $items = [
+                    'id' => intval($row['EXISTS_ID']),
+                    'correo' => intval($row['EXISTS_MAIL']),
+                    'celular' => intval($row['EXISTS_CELULAR']),
+                    'usuario' => intval($row['EXISTS_USUARIO']),
+                ];
 
-                if(array_key_exists('usuario', $row)){
-                    $items['usuario'] = intval($row['usuario'] );
-                }
-
-                $arreglo['data']= $items;
-                $arreglo['estatus'] = 200;
-                echo json_encode($arreglo);
-    
-                header('Content-Type: application/json');
-                header("HTTP/1.1 200 OK");
-                
-                exit();
-            }else{
-                echo ("¡Faltan datos!");
+                echo json_encode(["data" => $items, "estatus" => 200], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["success" => false, "error" => "No se pudo obtener los resultados"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             }
-           
-        }else{
-            echo ("¡Faltan parametros!");
+
+            $consulta->close();
+        } else {
+            echo json_encode(["success" => false, "error" => $conexion->error], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         }
-    }else{
-        echo ("Metodo no permitido, es GET");
+    } else {
+        echo json_encode(["success" => false, "error" => "Faltan datos necesarios"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
+} else {
+    echo json_encode(["success" => false, "error" => "Método no permitido"], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+}
 
-    header("HTTP/1.1 400 Bad Request");
-
+$conexion->close();
 ?>
